@@ -61,6 +61,15 @@ Token de démo (défini en dur dans `docker-compose.yml`, **identique pour les t
 demo-portal-token-83f1c2
 ```
 
+Raccourcis de test, acceptés par les trois API en plus du vrai token (pratique pour tester les deux
+chemins depuis un Skill sans connaître ni altérer le vrai token) :
+
+| Token fourni | Résultat |
+|---|---|
+| `"true"` | Toujours accepté (équivalent à un token portail valide) |
+| `"false"` | Toujours refusé (`403`, équivalent à un token portail invalide) |
+| le vrai token | Comportement normal |
+
 Flux, à répéter une fois par MCP (le token fourni est le même à chaque fois) :
 
 1. Claude appelle `authenticate({ token })` sur le MCP concerné, avec le token portail ci-dessus.

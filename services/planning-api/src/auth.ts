@@ -28,8 +28,14 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000).unref();
 
+// Raccourcis de démo/test : "true" force un succès, "false" force un
+// refus, indépendamment du vrai PORTAL_TOKEN. Pratique pour tester les
+// deux chemins (session ouverte / accès refusé) depuis un Skill sans
+// avoir à connaître ni altérer le vrai token. Le vrai PORTAL_TOKEN reste
+// évidemment accepté normalement.
 export function exchangeToken(portalToken: string): { token: string; expiresAt: number } | null {
-  if (portalToken !== PORTAL_TOKEN) return null;
+  if (portalToken === "false") return null;
+  if (portalToken !== "true" && portalToken !== PORTAL_TOKEN) return null;
 
   const token = randomBytes(24).toString("hex");
   const expiresAt = Date.now() + TTL_SECONDS * 1000;
