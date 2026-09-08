@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Copie locale des projets connus du système Planning. Systèmes
+// indépendants : Planning API ne partage pas de table avec Ticket API,
+// seule la clé de projet (ex: "WEB") sert de référence commune entre
+// les deux domaines.
+model Project {
+  id     String          @id @default(cuid())
+  key    String          @unique
+  name   String
+  events PlanningEvent[]
+
+  @@map("projects")
+}
+
+model PlanningEvent {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  ticketId  String? // référence faible vers un ticket, pas de FK inter-système
+  title     String
+  date      DateTime @db.Date
+  startTime String
+  endTime   String
+  type      String   @default("work") // work | meeting
+  createdAt DateTime @default(now())
+
+  @@map("planning_events")
+}

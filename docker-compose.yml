@@ -1,0 +1,102 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: poc
+      POSTGRES_PASSWORD: poc
+      POSTGRES_DB: postgres
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./infra/postgres/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U poc"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - poc-network
+
+  # Chaque *-api possède son propre token d'accès (API_TOKEN), comme une
+  # vraie clé d'API pré-existante. Ce token n'est jamais injecté dans les
+  # *-mcp : il doit être fourni explicitement par Claude via le tool
+  # `authenticate` de chaque MCP (voir README).
+  ticket-api:
+    build: ./services/ticket-api
+    environment:
+      DATABASE_URL: postgresql://poc:poc@postgres:5432/ticket
+      API_TOKEN: demo-ticket-api-token-9f8a
+      AUTH_TOKEN_TTL_SECONDS: "60"
+      PORT: "4001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - poc-network
+
+  ticket-mcp:
+    build: ./services/ticket-mcp
+    environment:
+      TICKET_API_URL: http://ticket-api:4001
+      PORT: "3101"
+    ports:
+      - "3101:3101"
+    depends_on:
+      - ticket-api
+    networks:
+      - poc-network
+
+  planning-api:
+    build: ./services/planning-api
+    environment:
+      DATABASE_URL: postgresql://poc:poc@postgres:5432/planning
+      API_TOKEN: demo-planning-api-token-3c2d
+      AUTH_TOKEN_TTL_SECONDS: "60"
+      PORT: "4002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - poc-network
+
+  planning-mcp:
+    build: ./services/planning-mcp
+    environment:
+      PLANNING_API_URL: http://planning-api:4002
+      PORT: "3102"
+    ports:
+      - "3102:3102"
+    depends_on:
+      - planning-api
+    networks:
+      - poc-network
+
+  report-api:
+    build: ./services/report-api
+    environment:
+      DATABASE_URL: postgresql://poc:poc@postgres:5432/report
+      API_TOKEN: demo-report-api-token-7e1b
+      AUTH_TOKEN_TTL_SECONDS: "60"
+      PORT: "4003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - poc-network
+
+  report-mcp:
+    build: ./services/report-mcp
+    environment:
+      REPORT_API_URL: http://report-api:4003
+      PORT: "3103"
+    ports:
+      - "3103:3103"
+    depends_on:
+      - report-api
+    networks:
+      - poc-network
+
+networks:
+  poc-network:
+
+volumes:
+  pg_data:

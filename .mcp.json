@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "ticket": {
+      "type": "http",
+      "url": "http://localhost:3101/mcp"
+    },
+    "planning": {
+      "type": "http",
+      "url": "http://localhost:3102/mcp"
+    },
+    "report": {
+      "type": "http",
+      "url": "http://localhost:3103/mcp"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Un rapport par jour. Le contenu (markdown) organise lui-même la
+// synthèse par projet — ce n'est pas modélisé en base : le regroupement
+// par projet est une responsabilité du Skill, pas du schéma Report.
+model Report {
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date
+  content   String
+  status    String   @default("draft") // draft | submitted
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reports")
+}
