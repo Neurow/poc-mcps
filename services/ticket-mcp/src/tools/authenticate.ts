@@ -9,11 +9,11 @@ export function registerAuthenticate(server: McpServer, tokenManager: TokenManag
     {
       title: "S'authentifier auprès de Ticket API",
       description:
-        "Fournit le token d'accès à Ticket API (obtenu par l'utilisateur auprès du système Ticket) " +
-        "pour permettre les appels des autres outils. À appeler avant toute autre opération sur ce " +
-        "serveur, ou de nouveau si un outil échoue avec une erreur d'authentification.",
+        "Fournit le token portail de l'utilisateur (le même que pour Planning MCP et Report MCP) pour " +
+        "que ce MCP ouvre sa propre session auprès de Ticket API. À appeler avant toute autre " +
+        "opération sur ce serveur, ou de nouveau si un outil échoue avec une erreur d'authentification.",
       inputSchema: {
-        token: z.string().min(1).describe("Token d'accès délivré par Ticket API"),
+        token: z.string().min(1).describe("Token portail de l'utilisateur"),
       },
       annotations: { readOnlyHint: false, openWorldHint: false },
     },

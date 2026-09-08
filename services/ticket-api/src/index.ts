@@ -8,20 +8,19 @@ app.use(express.json());
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
-// Échange API Token -> Ticket Service Token. Le token d'API est fourni
-// explicitement par Claude (via le tool `authenticate` du MCP), pas
-// injecté automatiquement : il doit être obtenu par l'utilisateur
-// auprès du système Ticket, comme une vraie clé d'API.
+// Échange Portal Token -> Ticket Service Token (session propre à Ticket
+// API). Le portal token est fourni explicitement par Claude (via le tool
+// `authenticate` du MCP), jamais injecté automatiquement.
 app.post("/auth/exchange", (req, res) => {
-  const apiToken = req.body?.apiToken;
-  if (typeof apiToken !== "string") {
-    res.status(400).json({ error: "missing_api_token" });
+  const portalToken = req.body?.portalToken;
+  if (typeof portalToken !== "string") {
+    res.status(400).json({ error: "missing_portal_token" });
     return;
   }
 
-  const result = exchangeToken(apiToken);
+  const result = exchangeToken(portalToken);
   if (!result) {
-    res.status(403).json({ error: "invalid_api_token" });
+    res.status(403).json({ error: "invalid_portal_token" });
     return;
   }
 

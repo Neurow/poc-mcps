@@ -9,11 +9,11 @@ export function registerAuthenticate(server: McpServer, tokenManager: TokenManag
     {
       title: "S'authentifier auprès de Planning API",
       description:
-        "Fournit le token d'accès à Planning API (obtenu par l'utilisateur auprès du système " +
-        "Planning) pour permettre les appels des autres outils. À appeler avant toute autre " +
+        "Fournit le token portail de l'utilisateur (le même que pour Ticket MCP et Report MCP) pour " +
+        "que ce MCP ouvre sa propre session auprès de Planning API. À appeler avant toute autre " +
         "opération sur ce serveur, ou de nouveau si un outil échoue avec une erreur d'authentification.",
       inputSchema: {
-        token: z.string().min(1).describe("Token d'accès délivré par Planning API"),
+        token: z.string().min(1).describe("Token portail de l'utilisateur"),
       },
       annotations: { readOnlyHint: false, openWorldHint: false },
     },

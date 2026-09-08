@@ -16,15 +16,16 @@ services:
     networks:
       - poc-network
 
-  # Chaque *-api possède son propre token d'accès (API_TOKEN), comme une
-  # vraie clé d'API pré-existante. Ce token n'est jamais injecté dans les
-  # *-mcp : il doit être fourni explicitement par Claude via le tool
-  # `authenticate` de chaque MCP (voir README).
+  # Un seul token portail (PORTAL_TOKEN), identique pour les trois *-api :
+  # il représente l'unique utilisateur fictif du POC. Chaque API le valide
+  # indépendamment et émet sa propre session (Service Token) — voir
+  # README. Ce token n'est jamais injecté dans les *-mcp : il doit être
+  # fourni explicitement par Claude via le tool `authenticate` de chaque MCP.
   ticket-api:
     build: ./services/ticket-api
     environment:
       DATABASE_URL: postgresql://poc:poc@postgres:5432/ticket
-      API_TOKEN: demo-ticket-api-token-9f8a
+      PORTAL_TOKEN: demo-portal-token-83f1c2
       AUTH_TOKEN_TTL_SECONDS: "60"
       PORT: "4001"
     depends_on:
@@ -49,7 +50,7 @@ services:
     build: ./services/planning-api
     environment:
       DATABASE_URL: postgresql://poc:poc@postgres:5432/planning
-      API_TOKEN: demo-planning-api-token-3c2d
+      PORTAL_TOKEN: demo-portal-token-83f1c2
       AUTH_TOKEN_TTL_SECONDS: "60"
       PORT: "4002"
     depends_on:
@@ -74,7 +75,7 @@ services:
     build: ./services/report-api
     environment:
       DATABASE_URL: postgresql://poc:poc@postgres:5432/report
-      API_TOKEN: demo-report-api-token-7e1b
+      PORTAL_TOKEN: demo-portal-token-83f1c2
       AUTH_TOKEN_TTL_SECONDS: "60"
       PORT: "4003"
     depends_on:

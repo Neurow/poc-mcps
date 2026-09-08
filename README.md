@@ -53,24 +53,24 @@ docker compose --profile tools up -d ticket-studio planning-studio report-studio
 
 ## Authentification (simulée)
 
-Le principe : chaque API métier est un système pré-existant qui exige déjà son propre token d'accès (comme une vraie clé d'API), au même titre que la logique métier — l'auth est portée par l'API, pas inventée par le MCP. Le MCP, lui, ne détient **aucun credential par défaut** : il expose l'authentification comme un tool explicite (`authenticate`) que l'agent doit appeler, avec un token que l'utilisateur fournit (obtenu "auprès du système", ici simplement documenté ci-dessous — il n'y a qu'un seul utilisateur fictif).
+Principe façon OAuth2 : un **Portal** (simulé — pas un service à part, juste un token statique documenté ci-dessous) délivre **un seul token portail** représentant l'unique utilisateur fictif du POC. Ce même token est ensuite présenté séparément à chacune des trois API (Ticket, Planning, Report) ; chacune le valide indépendamment et, si valide, ouvre sa **propre session** (Service Token) — exactement comme un mécanisme OAuth2 "échange un token d'identité contre un token de session par ressource". Le MCP ne détient **aucun credential par défaut** : c'est un tool explicite (`authenticate`) que l'agent doit appeler avec ce token portail, jamais injecté automatiquement.
 
-Tokens de démo (définis en dur dans `docker-compose.yml`, un par domaine — ce sont des systèmes indépendants, pas de SSO partagé) :
+Token de démo (défini en dur dans `docker-compose.yml`, **identique pour les trois `*-api`**) :
 
-| Domaine | Token |
-|---|---|
-| Ticket | `demo-ticket-api-token-9f8a` |
-| Planning | `demo-planning-api-token-3c2d` |
-| Report | `demo-report-api-token-7e1b` |
+```
+demo-portal-token-83f1c2
+```
 
-Flux :
+Flux, à répéter une fois par MCP (le token fourni est le même à chaque fois) :
 
-1. Claude appelle `authenticate({ token })` sur le MCP concerné, avec le token ci-dessus.
-2. Le MCP échange ce token auprès de son API via `POST /auth/exchange`, obtient un **service token** à durée de vie courte (60s par défaut, `AUTH_TOKEN_TTL_SECONDS`), et le met en cache en mémoire.
-3. Les tools métier suivants attachent ce service token en `Authorization: Bearer ...`. Sur un `401` (expiration), le MCP ré-échange automatiquement avec le token d'origine (toujours en mémoire) et rejoue la requête une fois — sans que Claude ait besoin de ré-authentifier à chaque appel.
-4. Si le token fourni à `authenticate` est invalide, l'API le refuse (`403`) et le MCP l'oublie : Claude doit ré-appeler `authenticate` avec un token valide. Tant qu'aucune authentification n'a eu lieu, tout tool métier renvoie une erreur explicite invitant à appeler `authenticate` d'abord.
+1. Claude appelle `authenticate({ token })` sur le MCP concerné, avec le token portail ci-dessus.
+2. Ce MCP échange ce token auprès de **son** API via `POST /auth/exchange`, obtient une **session** (service token) à durée de vie courte (60s par défaut, `AUTH_TOKEN_TTL_SECONDS`), propre à ce domaine, et la met en cache en mémoire.
+3. Les tools métier suivants attachent cette session en `Authorization: Bearer ...`. Sur un `401` (expiration), le MCP ré-échange automatiquement avec le token portail (toujours en mémoire) et rejoue la requête une fois — sans que Claude ait besoin de ré-authentifier à chaque appel.
+4. Si le token portail est invalide, l'API le refuse (`403`) et le MCP l'oublie : Claude doit ré-appeler `authenticate` avec un token valide. Tant qu'aucune authentification n'a eu lieu sur un MCP donné, tout tool métier de ce MCP renvoie une erreur explicite invitant à appeler `authenticate` d'abord.
 
-Cette authentification vit au niveau du process MCP (partagée entre sessions, cohérent avec l'hypothèse d'un seul utilisateur fictif), pas au niveau de chaque appel d'outil individuel. L'implémentation (TokenManager + endpoint `/auth/exchange`) est dupliquée à l'identique dans chaque MCP/API plutôt que partagée : ce sont des systèmes indépendants qui ne partagent pas de code runtime.
+Au total, 4 tokens en circulation pour une session complète : 1 token portail (entrée, partagé) + 3 sessions dérivées (une par domaine, jamais partagées entre elles — si la session Ticket expire, ça n'affecte pas Planning ni Report).
+
+Cette authentification vit au niveau du process MCP (partagée entre sessions Claude, cohérent avec l'hypothèse d'un seul utilisateur fictif), pas au niveau de chaque appel d'outil individuel. L'implémentation (TokenManager + endpoint `/auth/exchange`) est dupliquée à l'identique dans chaque MCP/API plutôt que partagée : ce sont des systèmes indépendants qui ne partagent pas de code runtime — ils acceptent juste, dans ce POC, la même valeur de token portail.
 
 ## Le Skill `poc-daily-report`
 

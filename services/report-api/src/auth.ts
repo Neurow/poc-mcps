@@ -1,11 +1,14 @@
 import { randomBytes } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 
-const API_TOKEN = process.env.API_TOKEN;
+// Le Portal Token est le même pour les trois domaines (une seule identité
+// utilisateur fictive, délivrée par un Portal simulé) : chaque API valide
+// indépendamment ce même token et émet sa propre session (Service Token).
+const PORTAL_TOKEN = process.env.PORTAL_TOKEN;
 const TTL_SECONDS = Number(process.env.AUTH_TOKEN_TTL_SECONDS ?? 60);
 
-if (!API_TOKEN) {
-  throw new Error("API_TOKEN env var is required");
+if (!PORTAL_TOKEN) {
+  throw new Error("PORTAL_TOKEN env var is required");
 }
 
 interface ServiceTokenEntry {
@@ -24,8 +27,8 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000).unref();
 
-export function exchangeToken(apiToken: string): { token: string; expiresAt: number } | null {
-  if (apiToken !== API_TOKEN) return null;
+export function exchangeToken(portalToken: string): { token: string; expiresAt: number } | null {
+  if (portalToken !== PORTAL_TOKEN) return null;
 
   const token = randomBytes(24).toString("hex");
   const expiresAt = Date.now() + TTL_SECONDS * 1000;

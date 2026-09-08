@@ -19,10 +19,12 @@ MCP, de décider quand demander une confirmation à l'utilisateur avant une écr
 
 Chaque MCP exige une authentification explicite avant tout autre tool : appelle `mcp__planning__authenticate`,
 `mcp__ticket__authenticate` et `mcp__report__authenticate` (au moment où tu en as besoin dans le
-workflow, pas nécessairement tous d'un coup) avec le token du domaine correspondant. Si tu ne connais
-pas ces tokens, demande-les à l'utilisateur plutôt que d'en inventer un — ne saute jamais cette étape
-silencieusement. Si un tool métier échoue avec une erreur d'authentification en cours de route (token
-expiré ou jamais fourni), ré-appelle `authenticate` sur le MCP concerné avant de continuer.
+workflow, pas nécessairement tous d'un coup) avec **le même token portail** — un seul token, présenté
+séparément à chacun des trois MCP, chacun ouvrant sa propre session auprès de son API. Si tu ne connais
+pas ce token, demande-le à l'utilisateur plutôt que d'en inventer un — ne saute jamais cette étape
+silencieusement. Si un tool métier échoue avec une erreur d'authentification en cours de route (session
+expirée sur ce domaine, ou jamais ouverte), ré-appelle `authenticate` sur le MCP concerné avant de
+continuer — les autres MCP restent authentifiés indépendamment.
 
 ### 1. Déterminer la date cible
 

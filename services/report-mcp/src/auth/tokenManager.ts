@@ -5,34 +5,35 @@ interface TokenState {
 
 export class NotAuthenticatedError extends Error {
   constructor() {
-    super("Non authentifié : appelle d'abord le tool 'authenticate' avec un token Report API valide.");
+    super("Non authentifié : appelle d'abord le tool 'authenticate' avec un token portail valide.");
   }
 }
 
-// Même principe que Ticket MCP / Planning MCP : aucun credential par
-// défaut, Claude doit fournir le token Report API via le tool
-// `authenticate`. Le token est ensuite échangé contre un Report
-// Service Token à durée de vie courte, mis en cache et renouvelé
-// automatiquement.
+// Même principe que Ticket MCP / Planning MCP : le MCP ne détient aucun
+// credential par défaut, Claude doit fournir le token portail via le
+// tool `authenticate` (le même token que pour Ticket MCP et Planning
+// MCP — une seule identité utilisateur). Échangé contre un Report
+// Service Token (session propre à Report API), mis en cache et
+// renouvelé automatiquement.
 export class TokenManager {
-  private apiToken: string | null = null;
+  private portalToken: string | null = null;
   private state: TokenState | null = null;
   private inFlight: Promise<TokenState> | null = null;
 
   constructor(private readonly apiBaseUrl: string) {}
 
   isAuthenticated(): boolean {
-    return this.apiToken !== null;
+    return this.portalToken !== null;
   }
 
-  async authenticate(apiToken: string): Promise<TokenState> {
-    this.apiToken = apiToken;
+  async authenticate(portalToken: string): Promise<TokenState> {
+    this.portalToken = portalToken;
     this.state = null;
     return this.refresh();
   }
 
   async getToken(forceRefresh = false): Promise<string> {
-    if (!this.apiToken) throw new NotAuthenticatedError();
+    if (!this.portalToken) throw new NotAuthenticatedError();
 
     if (!forceRefresh && this.state && this.state.expiresAt - Date.now() > 5_000) {
       return this.state.token;
@@ -51,17 +52,17 @@ export class TokenManager {
   }
 
   private async exchange(): Promise<TokenState> {
-    if (!this.apiToken) throw new NotAuthenticatedError();
+    if (!this.portalToken) throw new NotAuthenticatedError();
 
     const res = await fetch(`${this.apiBaseUrl}/auth/exchange`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ apiToken: this.apiToken }),
+      body: JSON.stringify({ portalToken: this.portalToken }),
     });
 
     if (res.status === 403) {
-      this.apiToken = null;
-      throw new Error("Token Report API refusé par l'API. Appelle 'authenticate' avec un token valide.");
+      this.portalToken = null;
+      throw new Error("Token portail refusé par Report API. Appelle 'authenticate' avec un token valide.");
     }
     if (!res.ok) {
       throw new Error(`Échange de token échoué (${res.status}): ${await res.text()}`);

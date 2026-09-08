@@ -8,15 +8,15 @@ app.use(express.json());
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 app.post("/auth/exchange", (req, res) => {
-  const apiToken = req.body?.apiToken;
-  if (typeof apiToken !== "string") {
-    res.status(400).json({ error: "missing_api_token" });
+  const portalToken = req.body?.portalToken;
+  if (typeof portalToken !== "string") {
+    res.status(400).json({ error: "missing_portal_token" });
     return;
   }
 
-  const result = exchangeToken(apiToken);
+  const result = exchangeToken(portalToken);
   if (!result) {
-    res.status(403).json({ error: "invalid_api_token" });
+    res.status(403).json({ error: "invalid_portal_token" });
     return;
   }
 

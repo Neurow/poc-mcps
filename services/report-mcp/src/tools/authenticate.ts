@@ -9,11 +9,11 @@ export function registerAuthenticate(server: McpServer, tokenManager: TokenManag
     {
       title: "S'authentifier auprès de Report API",
       description:
-        "Fournit le token d'accès à Report API (obtenu par l'utilisateur auprès du système Report) " +
-        "pour permettre les appels des autres outils. À appeler avant toute autre opération sur ce " +
-        "serveur, ou de nouveau si un outil échoue avec une erreur d'authentification.",
+        "Fournit le token portail de l'utilisateur (le même que pour Ticket MCP et Planning MCP) pour " +
+        "que ce MCP ouvre sa propre session auprès de Report API. À appeler avant toute autre " +
+        "opération sur ce serveur, ou de nouveau si un outil échoue avec une erreur d'authentification.",
       inputSchema: {
-        token: z.string().min(1).describe("Token d'accès délivré par Report API"),
+        token: z.string().min(1).describe("Token portail de l'utilisateur"),
       },
       annotations: { readOnlyHint: false, openWorldHint: false },
     },
