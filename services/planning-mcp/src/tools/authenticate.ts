@@ -19,8 +19,12 @@ export function registerAuthenticate(server: McpServer, tokenManager: TokenManag
     },
     async ({ token }) => {
       try {
-        const { expiresAt } = await tokenManager.authenticate(token);
-        return textResult({ authenticated: true, expiresAt: new Date(expiresAt).toISOString() });
+        const { expiresAt, portalTokenExpiresAt } = await tokenManager.authenticate(token);
+        return textResult({
+          authenticated: true,
+          sessionExpiresAt: new Date(expiresAt).toISOString(),
+          portalTokenExpiresAt: new Date(portalTokenExpiresAt).toISOString(),
+        });
       } catch (err) {
         return errorResult((err as Error).message);
       }

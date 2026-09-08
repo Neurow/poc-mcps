@@ -64,11 +64,12 @@ demo-portal-token-83f1c2
 Flux, à répéter une fois par MCP (le token fourni est le même à chaque fois) :
 
 1. Claude appelle `authenticate({ token })` sur le MCP concerné, avec le token portail ci-dessus.
-2. Ce MCP échange ce token auprès de **son** API via `POST /auth/exchange`, obtient une **session** (service token) à durée de vie courte (60s par défaut, `AUTH_TOKEN_TTL_SECONDS`), propre à ce domaine, et la met en cache en mémoire.
+2. Ce MCP échange ce token auprès de **son** API via `POST /auth/exchange`, obtient une **session** (service token) à durée de vie de **1h** (`AUTH_TOKEN_TTL_SECONDS=3600`, côté API), propre à ce domaine, et la met en cache en mémoire.
 3. Les tools métier suivants attachent cette session en `Authorization: Bearer ...`. Sur un `401` (expiration), le MCP ré-échange automatiquement avec le token portail (toujours en mémoire) et rejoue la requête une fois — sans que Claude ait besoin de ré-authentifier à chaque appel.
 4. Si le token portail est invalide, l'API le refuse (`403`) et le MCP l'oublie : Claude doit ré-appeler `authenticate` avec un token valide. Tant qu'aucune authentification n'a eu lieu sur un MCP donné, tout tool métier de ce MCP renvoie une erreur explicite invitant à appeler `authenticate` d'abord.
+5. Le token portail lui-même est considéré valide **4h** (`PORTAL_TOKEN_TTL_SECONDS=14400`, côté MCP) à partir de l'appel à `authenticate` — il n'y a pas de vrai Portal qui l'expire réellement dans ce POC, c'est donc le MCP qui l'oublie de lui-même passé ce délai et exige un nouvel appel à `authenticate`, même si les 3600s de la session en cours n'ont pas encore expiré.
 
-Au total, 4 tokens en circulation pour une session complète : 1 token portail (entrée, partagé) + 3 sessions dérivées (une par domaine, jamais partagées entre elles — si la session Ticket expire, ça n'affecte pas Planning ni Report).
+Au total, 4 tokens en circulation pour une session complète : 1 token portail (entrée, partagé, valide 4h) + 3 sessions dérivées (une par domaine, valides 1h chacune, jamais partagées entre elles — si la session Ticket expire, ça n'affecte pas Planning ni Report).
 
 Cette authentification vit au niveau du process MCP (partagée entre sessions Claude, cohérent avec l'hypothèse d'un seul utilisateur fictif), pas au niveau de chaque appel d'outil individuel. L'implémentation (TokenManager + endpoint `/auth/exchange`) est dupliquée à l'identique dans chaque MCP/API plutôt que partagée : ce sont des systèmes indépendants qui ne partagent pas de code runtime — ils acceptent juste, dans ce POC, la même valeur de token portail.
 

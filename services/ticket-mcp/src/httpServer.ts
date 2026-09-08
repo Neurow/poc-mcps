@@ -10,7 +10,8 @@ export function buildApp() {
   const apiBaseUrl = process.env.TICKET_API_URL;
   if (!apiBaseUrl) throw new Error("TICKET_API_URL env var is required");
 
-  const tokenManager = new TokenManager(apiBaseUrl);
+  const portalTokenTtlSeconds = Number(process.env.PORTAL_TOKEN_TTL_SECONDS ?? 4 * 60 * 60);
+  const tokenManager = new TokenManager(apiBaseUrl, portalTokenTtlSeconds * 1000);
   const client = new TicketApiClient(apiBaseUrl, tokenManager);
 
   const app = express();
