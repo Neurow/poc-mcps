@@ -1,5 +1,12 @@
 import type { TokenManager } from "./auth/tokenManager.js";
 
+export interface RealisateurRefDTO {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
 export interface ReportEntryInput {
   ticketId: string;
   date: string;
@@ -16,6 +23,7 @@ export interface ReportDTO {
   date: string;
   content: string | null;
   status: string;
+  realisateur: RealisateurRefDTO;
   entries: ReportEntryDTO[];
   createdAt: string;
   updatedAt: string;
@@ -52,14 +60,15 @@ export class ReportApiClient {
     return res;
   }
 
-  async getReport(date: string): Promise<ReportDTO | null> {
-    const res = await this.request(`/reports/${encodeURIComponent(date)}`);
+  async getReport(realisateurId: string, date: string): Promise<ReportDTO | null> {
+    const res = await this.request(`/reports/${encodeURIComponent(realisateurId)}/${encodeURIComponent(date)}`);
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Lecture du rapport échouée (${res.status}): ${await res.text()}`);
     return res.json() as Promise<ReportDTO>;
   }
 
   async createReport(input: {
+    realisateurId: string;
     date: string;
     content?: string;
     status?: string;
@@ -85,5 +94,11 @@ export class ReportApiClient {
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Mise à jour du rapport échouée (${res.status}): ${await res.text()}`);
     return res.json() as Promise<ReportDTO>;
+  }
+
+  async listRealisateurs(): Promise<RealisateurRefDTO[]> {
+    const res = await this.request(`/realisateurs`);
+    if (!res.ok) throw new Error(`Lecture des réalisateurs échouée (${res.status}): ${await res.text()}`);
+    return res.json() as Promise<RealisateurRefDTO[]>;
   }
 }

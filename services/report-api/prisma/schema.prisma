@@ -7,22 +7,95 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Un rapport par jour. `entries` porte le détail précis "un ticket = une
-// entrée" : à quelle heure la tâche a commencé (`date`, timestamp
-// complet) et combien de temps elle a duré (`duration`, en minutes) —
-// de quoi reconstruire entièrement ce qu'une personne a fait sur une
-// journée. `content` reste un résumé libre optionnel en complément (le
-// regroupement par projet, lui, reste une responsabilité du Skill, pas
-// du schéma Report).
-model Report {
-  id        String        @id @default(cuid())
-  date      DateTime      @unique @db.Date
-  content   String?
-  status    String        @default("draft") // draft | submitted
-  entries   ReportEntry[]
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+// Base partagée par les 3 API (ticket, planning, report) : ce schéma est
+// dupliqué à l'identique dans chacune (même philosophie que l'auth déjà
+// dupliquée — systèmes indépendants qui ne partagent pas de code runtime,
+// mais qui partagent ici une base Postgres unique).
 
+model Realisateur {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  firstName String
+  lastName  String
+  createdAt DateTime @default(now())
+
+  assignedTickets Ticket[]        @relation("TicketAssignee")
+  comments        TicketComment[]
+  planningEvents  PlanningEvent[]
+  reports         Report[]
+
+  @@map("realisateurs")
+}
+
+model Project {
+  id      String   @id @default(cuid())
+  key     String   @unique
+  name    String
+  tickets Ticket[]
+
+  @@map("projects")
+}
+
+model Ticket {
+  id               String          @id @default(cuid())
+  projectId        String
+  project          Project         @relation(fields: [projectId], references: [id])
+  title            String
+  description      String?
+  status           String          @default("open")
+  assigneeId       String?
+  assignee         Realisateur?    @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  estimatedMinutes Int? // temps théorique estimé, optionnel
+  timeSpentMinutes Int             @default(0) // incrémenté/décrémenté par report-api quand du temps est pointé
+  comments         TicketComment[]
+  planningEvents   PlanningEvent[]
+  reportEntries    ReportEntry[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@map("tickets")
+}
+
+model TicketComment {
+  id        String      @id @default(cuid())
+  ticketId  String
+  ticket    Ticket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    Realisateur @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime    @default(now())
+
+  @@map("ticket_comments")
+}
+
+model PlanningEvent {
+  id            String      @id @default(cuid())
+  ticketId      String
+  ticket        Ticket      @relation(fields: [ticketId], references: [id])
+  realisateurId String
+  realisateur   Realisateur @relation(fields: [realisateurId], references: [id])
+  title         String
+  date          DateTime    @db.Date
+  startTime     String
+  endTime       String
+  type          String      @default("work") // work | meeting
+  createdAt     DateTime    @default(now())
+
+  @@map("planning_events")
+}
+
+model Report {
+  id            String        @id @default(cuid())
+  realisateurId String
+  realisateur   Realisateur   @relation(fields: [realisateurId], references: [id])
+  date          DateTime      @db.Date
+  content       String?
+  status        String        @default("draft") // draft | submitted
+  entries       ReportEntry[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([realisateurId, date])
   @@map("reports")
 }
 
@@ -30,7 +103,8 @@ model ReportEntry {
   id          String   @id @default(cuid())
   reportId    String
   report      Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  ticketId    String // référence faible vers un ticket, pas de FK inter-système — un ticket = une entrée
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id])
   date        DateTime // début précis de la tâche (timestamp complet, pas juste le jour)
   duration    Int // durée en minutes
   description String?

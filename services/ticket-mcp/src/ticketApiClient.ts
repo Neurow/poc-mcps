@@ -1,15 +1,24 @@
 import type { TokenManager } from "./auth/tokenManager.js";
 
+export interface RealisateurRefDTO {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
 export interface TicketDTO {
   id: string;
   title: string;
   description: string | null;
   status: string;
-  assignee: string | null;
+  assignee: RealisateurRefDTO | null;
+  estimatedMinutes: number | null;
+  timeSpentMinutes: number;
   project: { key: string; name: string };
   createdAt: string;
   updatedAt: string;
-  comments?: { author: string; body: string; createdAt: string }[];
+  comments?: { id: string; author: RealisateurRefDTO; body: string; createdAt: string }[];
 }
 
 // Adapte l'API Ticket (technique, orientée CRUD) vers des méthodes
@@ -59,7 +68,13 @@ export class TicketApiClient {
     return res.json() as Promise<TicketDTO>;
   }
 
-  async createTicket(input: { projectKey: string; title: string; description?: string }): Promise<TicketDTO> {
+  async createTicket(input: {
+    projectKey: string;
+    title: string;
+    description?: string;
+    assigneeId?: string;
+    estimatedMinutes?: number;
+  }): Promise<TicketDTO> {
     const res = await this.request(`/tickets`, { method: "POST", body: JSON.stringify(input) });
     if (!res.ok) throw new Error(`Création du ticket échouée (${res.status}): ${await res.text()}`);
     return res.json() as Promise<TicketDTO>;
@@ -67,7 +82,13 @@ export class TicketApiClient {
 
   async updateTicket(
     id: string,
-    input: { title?: string; description?: string; status?: string }
+    input: {
+      title?: string;
+      description?: string;
+      status?: string;
+      assigneeId?: string | null;
+      estimatedMinutes?: number | null;
+    }
   ): Promise<TicketDTO | null> {
     const res = await this.request(`/tickets/${encodeURIComponent(id)}`, {
       method: "PATCH",
@@ -78,7 +99,7 @@ export class TicketApiClient {
     return res.json() as Promise<TicketDTO>;
   }
 
-  async addComment(id: string, input: { author: string; body: string }): Promise<TicketDTO | null> {
+  async addComment(id: string, input: { authorId: string; body: string }): Promise<TicketDTO | null> {
     const res = await this.request(`/tickets/${encodeURIComponent(id)}/comments`, {
       method: "POST",
       body: JSON.stringify(input),
@@ -86,5 +107,11 @@ export class TicketApiClient {
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Ajout du commentaire échoué (${res.status}): ${await res.text()}`);
     return res.json() as Promise<TicketDTO>;
+  }
+
+  async listRealisateurs(): Promise<RealisateurRefDTO[]> {
+    const res = await this.request(`/realisateurs`);
+    if (!res.ok) throw new Error(`Lecture des réalisateurs échouée (${res.status}): ${await res.text()}`);
+    return res.json() as Promise<RealisateurRefDTO[]>;
   }
 }

@@ -13,14 +13,14 @@ export function registerAddComment(server: McpServer, client: TicketApiClient) {
         "à l'utilisateur avant d'appeler cet outil.",
       inputSchema: {
         id: z.string().describe("Identifiant du ticket"),
-        author: z.string().describe("Nom de l'auteur du commentaire"),
+        authorId: z.string().describe("Id de l'auteur du commentaire (voir list_realisateurs)"),
         body: z.string().min(1),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async ({ id, author, body }) => {
+    async ({ id, authorId, body }) => {
       try {
-        const ticket = await client.addComment(id, { author, body });
+        const ticket = await client.addComment(id, { authorId, body });
         if (!ticket) return errorResult(`Aucun ticket trouvé avec l'id ${id}`);
         return textResult(ticket);
       } catch (err) {

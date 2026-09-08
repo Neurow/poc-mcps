@@ -16,7 +16,7 @@ export function registerSearchPlanning(server: McpServer, client: PlanningApiCli
       inputSchema: {
         from: z.string().regex(DATE_RE).optional().describe("Date de début (YYYY-MM-DD), incluse"),
         to: z.string().regex(DATE_RE).optional().describe("Date de fin (YYYY-MM-DD), incluse"),
-        projectKey: z.string().optional().describe("Clé de projet, ex: WEB, MOBILE, API"),
+        projectKey: z.string().optional().describe("Clé de projet, ex: BACK, WEB, MOBILE"),
       },
       annotations: { readOnlyHint: true, openWorldHint: false },
     },

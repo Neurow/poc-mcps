@@ -12,15 +12,17 @@ export function registerCreateTicket(server: McpServer, client: TicketApiClient)
         "Crée un nouveau ticket dans un projet donné. Opération d'écriture : demander confirmation " +
         "à l'utilisateur avant d'appeler cet outil.",
       inputSchema: {
-        projectKey: z.string().describe("Clé de projet, ex: WEB, MOBILE, API"),
+        projectKey: z.string().describe("Clé de projet, ex: BACK, WEB, MOBILE"),
         title: z.string().min(3),
         description: z.string().optional(),
+        assigneeId: z.string().optional().describe("Id du réalisateur assigné (voir list_realisateurs)"),
+        estimatedMinutes: z.number().int().positive().optional().describe("Temps théorique estimé, en minutes"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async ({ projectKey, title, description }) => {
+    async ({ projectKey, title, description, assigneeId, estimatedMinutes }) => {
       try {
-        const ticket = await client.createTicket({ projectKey, title, description });
+        const ticket = await client.createTicket({ projectKey, title, description, assigneeId, estimatedMinutes });
         return textResult(ticket);
       } catch (err) {
         return errorResult((err as Error).message);

@@ -25,6 +25,7 @@ export function registerCreateReport(server: McpServer, client: ReportApiClient)
         "d'écriture : demander confirmation à l'utilisateur avant d'appeler cet outil, en lui " +
         "présentant le contenu proposé.",
       inputSchema: {
+        realisateurId: z.string().describe("Id du réalisateur qui rapporte (voir list_realisateurs)"),
         date: z.string().regex(DATE_RE).describe("Date au format YYYY-MM-DD"),
         entries: z.array(entrySchema).optional().describe("Une entrée par ticket travaillé ce jour-là"),
         content: z.string().min(1).optional().describe("Résumé libre du rapport (markdown), optionnel"),
@@ -32,9 +33,9 @@ export function registerCreateReport(server: McpServer, client: ReportApiClient)
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async ({ date, entries, content, status }) => {
+    async ({ realisateurId, date, entries, content, status }) => {
       try {
-        const report = await client.createReport({ date, content, status, entries });
+        const report = await client.createReport({ realisateurId, date, content, status, entries });
         return textResult(report);
       } catch (err) {
         if (err instanceof ReportApiConflictError) {

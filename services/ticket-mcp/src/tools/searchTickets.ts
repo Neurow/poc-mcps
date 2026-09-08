@@ -15,7 +15,7 @@ export function registerSearchTickets(server: McpServer, client: TicketApiClient
       inputSchema: {
         query: z.string().optional().describe("Texte libre recherché dans le titre et la description"),
         status: z.enum(["open", "in_progress", "closed"]).optional(),
-        projectKey: z.string().optional().describe("Clé de projet, ex: WEB, MOBILE, API"),
+        projectKey: z.string().optional().describe("Clé de projet, ex: BACK, WEB, MOBILE"),
       },
       annotations: { readOnlyHint: true, openWorldHint: false },
     },

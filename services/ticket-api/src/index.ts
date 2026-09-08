@@ -1,6 +1,7 @@
 import express from "express";
 import { exchangeToken, requireServiceToken } from "./auth.js";
 import { projectsRouter } from "./routes/projects.js";
+import { realisateursRouter } from "./routes/realisateurs.js";
 import { ticketsRouter } from "./routes/tickets.js";
 
 const app = express();
@@ -28,6 +29,7 @@ app.post("/auth/exchange", (req, res) => {
 });
 
 app.use("/projects", requireServiceToken, projectsRouter);
+app.use("/realisateurs", requireServiceToken, realisateursRouter);
 app.use("/tickets", requireServiceToken, ticketsRouter);
 
 const port = Number(process.env.PORT ?? 4001);

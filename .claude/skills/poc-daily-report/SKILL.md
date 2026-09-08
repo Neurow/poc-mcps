@@ -26,16 +26,21 @@ silencieusement. Si un tool métier échoue avec une erreur d'authentification e
 expirée sur ce domaine, ou jamais ouverte), ré-appelle `authenticate` sur le MCP concerné avant de
 continuer — les autres MCP restent authentifiés indépendamment.
 
-### 1. Déterminer la date cible
+### 1. Déterminer la date cible et le réalisateur
 
 Par défaut, la date cible est **la veille** de la date du jour (calculée par toi, au format
 `YYYY-MM-DD`). Si l'utilisateur précise une autre date, utilise celle-ci à la place.
 
+Le rapport est désormais rattaché à un réalisateur (`realisateurId`), pas juste à une date. Si
+l'utilisateur n'a pas précisé de qui il s'agit, appelle `mcp__report__list_realisateurs` (ou
+`mcp__ticket__list_realisateurs`/`mcp__planning__list_realisateurs`, identiques) et demande-lui de
+choisir — ne devine jamais un réalisateur au hasard.
+
 ### 2. Récupérer le planning de la date cible
 
 Appelle `mcp__planning__get_planning_day` avec cette date. Le résultat est une liste d'événements,
-chacun avec `project.key`, `title`, `startTime`/`endTime`, `type` (`work` ou `meeting`), et
-éventuellement `ticketId`.
+chacun avec `ticketId`, `project.key`, `title`, `startTime`/`endTime`, `type` (`work` ou `meeting`) et
+`realisateur`. Ne garde que les événements du réalisateur choisi à l'étape 1 (compare `realisateur.id`).
 
 S'il n'y a aucun événement, informe l'utilisateur qu'il n'y a rien à synthétiser pour cette date et
 arrête-toi là (ne crée pas de rapport vide).
@@ -62,12 +67,13 @@ clos.
 ### 5. Construire les créneaux précis (`entries`)
 
 Le rapport porte le détail précis "un ticket = une entrée" via `entries`, avec l'heure de début exacte
-et la durée — pas seulement une synthèse en texte libre.
+et la durée — pas seulement une synthèse en texte libre. Tout événement de planning est désormais
+rattaché à un ticket (`ticketId` obligatoire), donc tous les événements du réalisateur ce jour-là
+entrent dans `entries`.
 
-1. Ne considère que les événements de planning qui ont un `ticketId`.
-2. **Regroupe-les par `ticketId`** — une entrée par ticket, jamais deux entrées pour le même ticket
-   dans un même rapport, même s'il apparaît dans plusieurs événements ce jour-là.
-3. Pour chaque ticket, construis une entrée :
+1. **Regroupe les événements par `ticketId`** — une entrée par ticket, jamais deux entrées pour le
+   même ticket dans un même rapport, même s'il apparaît dans plusieurs événements ce jour-là.
+2. Pour chaque ticket, construis une entrée :
 
 ```
 {
@@ -79,16 +85,12 @@ et la durée — pas seulement une synthèse en texte libre.
 }
 ```
 
-Les événements **sans** `ticketId` (réunions génériques, non rattachées à un ticket précis) n'ont pas
-leur place dans `entries` — mentionne-les uniquement dans le résumé (étape 6).
-
 ### 6. Composer le résumé (`content`, optionnel)
 
 Rédige un contenu markdown avec une section par projet (titre = nom du projet), contenant :
 
 - un résumé du temps passé (ex: "3h de travail, 1h30 de réunion") ;
-- les événements de la journée, en une ligne chacun (y compris ceux sans ticket, contrairement à
-  `entries`) ;
+- les événements de la journée, en une ligne chacun ;
 - une sous-liste "Tickets actifs" avec les tickets trouvés à l'étape 4 (id court + titre + statut).
 
 Commence le document par un titre de premier niveau avec la date (ex: `# Synthèse du 2026-09-07`).
@@ -105,9 +107,10 @@ workflow — la validation porte spécifiquement sur l'écriture.
 
 Une fois la confirmation obtenue :
 
-1. Appelle `mcp__report__get_report` avec la date cible.
+1. Appelle `mcp__report__get_report` avec `realisateurId` et la date cible.
 2. S'il n'existe pas (l'outil renvoie une erreur "aucun rapport trouvé"), appelle
-   `mcp__report__create_report` avec `date`, `entries`, `content`, et `status: "draft"`.
+   `mcp__report__create_report` avec `realisateurId`, `date`, `entries`, `content`, et
+   `status: "draft"`.
 3. S'il existe déjà, informe l'utilisateur qu'un rapport existe pour cette date et demande s'il veut
    l'écraser ; si oui, appelle `mcp__report__update_report` avec son `id`, les nouvelles `entries`
    (elles remplacent entièrement les existantes) et le nouveau `content`.

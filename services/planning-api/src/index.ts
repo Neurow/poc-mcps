@@ -1,6 +1,7 @@
 import express from "express";
 import { exchangeToken, requireServiceToken } from "./auth.js";
 import { planningRouter } from "./routes/planning.js";
+import { realisateursRouter } from "./routes/realisateurs.js";
 
 const app = express();
 app.use(express.json());
@@ -24,6 +25,7 @@ app.post("/auth/exchange", (req, res) => {
 });
 
 app.use("/planning", requireServiceToken, planningRouter);
+app.use("/realisateurs", requireServiceToken, realisateursRouter);
 
 const port = Number(process.env.PORT ?? 4002);
 app.listen(port, () => {

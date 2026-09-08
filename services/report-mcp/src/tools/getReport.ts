@@ -10,15 +10,16 @@ export function registerGetReport(server: McpServer, client: ReportApiClient) {
     "get_report",
     {
       title: "Obtenir le rapport d'un jour",
-      description: "Récupère le rapport existant pour une date donnée, s'il existe.",
+      description: "Récupère le rapport existant d'un réalisateur pour une date donnée, s'il existe.",
       inputSchema: {
+        realisateurId: z.string().describe("Id du réalisateur (voir list_realisateurs)"),
         date: z.string().regex(DATE_RE).describe("Date au format YYYY-MM-DD"),
       },
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
-    async ({ date }) => {
+    async ({ realisateurId, date }) => {
       try {
-        const report = await client.getReport(date);
+        const report = await client.getReport(realisateurId, date);
         if (!report) return errorResult(`Aucun rapport trouvé pour le ${date}`);
         return textResult(report);
       } catch (err) {

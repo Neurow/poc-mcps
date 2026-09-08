@@ -1,5 +1,6 @@
 import express from "express";
 import { exchangeToken, requireServiceToken } from "./auth.js";
+import { realisateursRouter } from "./routes/realisateurs.js";
 import { reportsRouter } from "./routes/reports.js";
 
 const app = express();
@@ -24,6 +25,7 @@ app.post("/auth/exchange", (req, res) => {
 });
 
 app.use("/reports", requireServiceToken, reportsRouter);
+app.use("/realisateurs", requireServiceToken, realisateursRouter);
 
 const port = Number(process.env.PORT ?? 4003);
 app.listen(port, () => {

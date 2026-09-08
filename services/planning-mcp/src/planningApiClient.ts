@@ -1,5 +1,12 @@
 import type { TokenManager } from "./auth/tokenManager.js";
 
+export interface RealisateurRefDTO {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
 export interface PlanningEventDTO {
   id: string;
   title: string;
@@ -7,8 +14,9 @@ export interface PlanningEventDTO {
   startTime: string;
   endTime: string;
   type: string;
-  ticketId: string | null;
+  ticketId: string;
   project: { key: string; name: string };
+  realisateur: RealisateurRefDTO;
 }
 
 export class PlanningApiClient {
@@ -17,15 +25,20 @@ export class PlanningApiClient {
     private readonly tokenManager: TokenManager
   ) {}
 
-  private async request(path: string, retryOn401 = true): Promise<Response> {
+  private async request(path: string, init: RequestInit = {}, retryOn401 = true): Promise<Response> {
     const token = await this.tokenManager.getToken();
     const res = await fetch(`${this.baseUrl}${path}`, {
-      headers: { authorization: `Bearer ${token}` },
+      ...init,
+      headers: {
+        ...(init.headers ?? {}),
+        "content-type": "application/json",
+        authorization: `Bearer ${token}`,
+      },
     });
 
     if (res.status === 401 && retryOn401) {
       await this.tokenManager.getToken(true);
-      return this.request(path, false);
+      return this.request(path, init, false);
     }
 
     return res;
@@ -54,5 +67,38 @@ export class PlanningApiClient {
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Lecture de l'événement échouée (${res.status}): ${await res.text()}`);
     return res.json() as Promise<PlanningEventDTO>;
+  }
+
+  async createEvent(input: {
+    ticketId: string;
+    realisateurId: string;
+    title: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    type?: string;
+  }): Promise<PlanningEventDTO> {
+    const res = await this.request(`/planning`, { method: "POST", body: JSON.stringify(input) });
+    if (!res.ok) throw new Error(`Création de l'événement échouée (${res.status}): ${await res.text()}`);
+    return res.json() as Promise<PlanningEventDTO>;
+  }
+
+  async updateEvent(
+    id: string,
+    input: { date?: string; startTime?: string; endTime?: string; type?: string }
+  ): Promise<PlanningEventDTO | null> {
+    const res = await this.request(`/planning/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`Mise à jour de l'événement échouée (${res.status}): ${await res.text()}`);
+    return res.json() as Promise<PlanningEventDTO>;
+  }
+
+  async listRealisateurs(): Promise<RealisateurRefDTO[]> {
+    const res = await this.request(`/realisateurs`);
+    if (!res.ok) throw new Error(`Lecture des réalisateurs échouée (${res.status}): ${await res.text()}`);
+    return res.json() as Promise<RealisateurRefDTO[]>;
   }
 }
