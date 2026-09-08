@@ -37,6 +37,20 @@ Au premier démarrage, chaque API applique son schéma Prisma (`prisma db push`)
 
 Claude Code est configuré via [.mcp.json](.mcp.json) pour se connecter aux trois serveurs. Le fichier ayant été créé/modifié en session, un redémarrage de session Claude Code est nécessaire pour (re)charger la configuration à chaque ajout de serveur.
 
+## Visualiser les données
+
+Pas d'interface custom : [Prisma Studio](https://www.prisma.io/studio) suffit largement pour "juste visualiser" — un service par domaine, réutilisant l'image `*-api` existante (juste une commande différente), en opt-in via un profil Compose pour ne pas alourdir le `docker compose up` de base :
+
+```bash
+docker compose --profile tools up -d ticket-studio planning-studio report-studio
+```
+
+| Studio | URL |
+|---|---|
+| Ticket | `http://localhost:5601` |
+| Planning | `http://localhost:5602` |
+| Report | `http://localhost:5603` |
+
 ## Authentification (simulée)
 
 Le principe : chaque API métier est un système pré-existant qui exige déjà son propre token d'accès (comme une vraie clé d'API), au même titre que la logique métier — l'auth est portée par l'API, pas inventée par le MCP. Le MCP, lui, ne détient **aucun credential par défaut** : il expose l'authentification comme un tool explicite (`authenticate`) que l'agent doit appeler, avec un token que l'utilisateur fournit (obtenu "auprès du système", ici simplement documenté ci-dessous — il n'y a qu'un seul utilisateur fictif).
