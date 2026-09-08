@@ -11,7 +11,7 @@ Claude
   └── Report MCP    → Report API    ─┘
 ```
 
-Chaque MCP est un service Docker indépendant avec son propre endpoint HTTP (Streamable HTTP, SDK MCP officiel). Claude est configuré avec trois serveurs MCP distincts (`.mcp.json`) — aucun agrégateur ne fusionne leurs tools. Un Skill (`daily-report`) orchestre les trois pour un workflow métier complet.
+Chaque MCP est un service Docker indépendant avec son propre endpoint HTTP (Streamable HTTP, SDK MCP officiel). Claude est configuré avec trois serveurs MCP distincts (`.mcp.json`) — aucun agrégateur ne fusionne leurs tools. Un Skill (`poc-daily-report`) orchestre les trois pour un workflow métier complet.
 
 ## Démarrage
 
@@ -72,9 +72,11 @@ Flux :
 
 Cette authentification vit au niveau du process MCP (partagée entre sessions, cohérent avec l'hypothèse d'un seul utilisateur fictif), pas au niveau de chaque appel d'outil individuel. L'implémentation (TokenManager + endpoint `/auth/exchange`) est dupliquée à l'identique dans chaque MCP/API plutôt que partagée : ce sont des systèmes indépendants qui ne partagent pas de code runtime.
 
-## Le Skill `daily-report`
+## Le Skill `poc-daily-report`
 
-[.claude/skills/daily-report/SKILL.md](.claude/skills/daily-report/SKILL.md) orchestre les trois MCP pour produire une synthèse quotidienne :
+Convention : tous les Skills de ce repo sont préfixés `poc-`.
+
+[.claude/skills/poc-daily-report/SKILL.md](.claude/skills/poc-daily-report/SKILL.md) orchestre les trois MCP pour produire une synthèse quotidienne :
 
 ```
 Skill
@@ -90,7 +92,7 @@ Claude
 
 Le Skill ne connaît que les tools MCP, jamais les API. La confirmation utilisateur avant écriture est portée par le Skill (le workflow), pas par le MCP (qui reste mécanique).
 
-Déclenchement : demander à Claude "génère mon daily report" / "la synthèse d'hier", ou invoquer `/daily-report`.
+Déclenchement : demander à Claude "génère mon daily report" / "la synthèse d'hier", ou invoquer `/poc-daily-report`.
 
 ## Où se trouve quoi
 
@@ -103,7 +105,7 @@ Déclenchement : demander à Claude "génère mon daily report" / "la synthèse 
 | Report API | [services/report-api](services/report-api) | Système métier, CRUD rapports quotidiens |
 | Report MCP | [services/report-mcp](services/report-mcp) | Interface agent pour Report API |
 | PostgreSQL | `postgres` (compose) | Persistance, une base par domaine (`ticket`, `planning`, `report`) |
-| Skill | [.claude/skills/daily-report](.claude/skills/daily-report) | Workflow métier orchestrant les trois MCP |
+| Skill | [.claude/skills/poc-daily-report](.claude/skills/poc-daily-report) | Workflow métier orchestrant les trois MCP |
 
 Chaque `*-api` : Express + Prisma + CRUD + auth par service token, aucune logique spécifique à Claude.
 Chaque `*-mcp` : SDK MCP officiel, Streamable HTTP, tools Zod, gestion du token, normalisation des réponses API → agent.

@@ -1,5 +1,5 @@
 ---
-name: daily-report
+name: poc-daily-report
 description: Génère la synthèse quotidienne d'activité à partir du planning de la veille et des tickets associés, regroupée par projet, puis crée ou met à jour le rapport correspondant après validation explicite de l'utilisateur. Utiliser quand l'utilisateur demande "le rapport du jour", "la synthèse d'hier", "génère mon daily report" ou équivalent.
 ---
 
