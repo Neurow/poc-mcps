@@ -1,6 +1,6 @@
 ---
 name: poc-daily-report
-description: Génère la synthèse quotidienne d'activité à partir du planning de la veille et des tickets associés, regroupée par projet, puis crée ou met à jour le rapport correspondant après validation explicite de l'utilisateur. Utiliser quand l'utilisateur demande "le rapport du jour", "la synthèse d'hier", "génère mon daily report" ou équivalent.
+description: Génère la synthèse quotidienne d'activité à partir du planning de la veille et des tickets associés, regroupée par projet, puis crée ou met à jour le rapport correspondant (créneaux précis par ticket + résumé) après validation explicite de l'utilisateur. Utiliser quand l'utilisateur demande "le rapport du jour", "la synthèse d'hier", "génère mon daily report" ou équivalent.
 ---
 
 # Daily report
@@ -59,32 +59,48 @@ Règle métier : un ticket `closed` ne doit pas apparaître dans le rapport, mê
 un `ticketId` dans un événement de planning — le rapport reflète le travail en cours, pas l'historique
 clos.
 
-### 5. Composer la synthèse
+### 5. Construire les créneaux précis (`entries`)
+
+Le rapport porte le détail précis "de telle heure à telle heure, sur tel ticket" via `entries`, pas
+seulement une synthèse en texte libre. Pour **chaque événement de planning qui a un `ticketId`**, crée
+une entrée :
+
+```
+{ ticketId, startTime, endTime, description: <titre de l'événement> }
+```
+
+Les événements **sans** `ticketId` (réunions génériques, non rattachées à un ticket précis) n'ont pas
+leur place dans `entries` — mentionne-les uniquement dans le résumé (étape 6).
+
+### 6. Composer le résumé (`content`, optionnel)
 
 Rédige un contenu markdown avec une section par projet (titre = nom du projet), contenant :
 
 - un résumé du temps passé (ex: "3h de travail, 1h30 de réunion") ;
-- les événements de la journée, en une ligne chacun ;
+- les événements de la journée, en une ligne chacun (y compris ceux sans ticket, contrairement à
+  `entries`) ;
 - une sous-liste "Tickets actifs" avec les tickets trouvés à l'étape 4 (id court + titre + statut).
 
 Commence le document par un titre de premier niveau avec la date (ex: `# Synthèse du 2026-09-07`).
 
-### 6. Présenter et valider avant écriture
+### 7. Présenter et valider avant écriture
 
-Affiche cette synthèse à l'utilisateur dans ta réponse (pas seulement en résumé — le contenu complet
-que tu proposes d'enregistrer) et demande explicitement une confirmation avant d'appeler un tool
-d'écriture. N'appelle **jamais** `create_report` ou `update_report` sans confirmation explicite, même
-si l'utilisateur a validé une étape précédente du workflow — la validation porte spécifiquement sur
-l'écriture.
+Affiche à l'utilisateur, dans ta réponse, la liste complète des `entries` proposées (ticket, créneau,
+description) ainsi que le résumé `content` — pas seulement un résumé de ta synthèse — et demande
+explicitement une confirmation avant d'appeler un tool d'écriture. N'appelle **jamais** `create_report`
+ou `update_report` sans confirmation explicite, même si l'utilisateur a validé une étape précédente du
+workflow — la validation porte spécifiquement sur l'écriture.
 
-### 7. Enregistrer le rapport
+### 8. Enregistrer le rapport
 
 Une fois la confirmation obtenue :
 
 1. Appelle `mcp__report__get_report` avec la date cible.
 2. S'il n'existe pas (l'outil renvoie une erreur "aucun rapport trouvé"), appelle
-   `mcp__report__create_report` avec `date`, `content`, et `status: "draft"`.
+   `mcp__report__create_report` avec `date`, `entries`, `content`, et `status: "draft"`.
 3. S'il existe déjà, informe l'utilisateur qu'un rapport existe pour cette date et demande s'il veut
-   l'écraser ; si oui, appelle `mcp__report__update_report` avec son `id` et le nouveau `content`.
+   l'écraser ; si oui, appelle `mcp__report__update_report` avec son `id`, les nouvelles `entries`
+   (elles remplacent entièrement les existantes) et le nouveau `content`.
 
-Confirme à l'utilisateur que le rapport a été enregistré, avec son `id` et son `status`.
+Confirme à l'utilisateur que le rapport a été enregistré, avec son `id`, son `status`, et le nombre
+d'entrées enregistrées.

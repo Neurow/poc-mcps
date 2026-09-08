@@ -1,10 +1,22 @@
 import type { TokenManager } from "./auth/tokenManager.js";
 
+export interface ReportEntryInput {
+  ticketId: string;
+  startTime: string;
+  endTime: string;
+  description?: string;
+}
+
+export interface ReportEntryDTO extends ReportEntryInput {
+  id: string;
+}
+
 export interface ReportDTO {
   id: string;
   date: string;
-  content: string;
+  content: string | null;
   status: string;
+  entries: ReportEntryDTO[];
   createdAt: string;
   updatedAt: string;
 }
@@ -47,7 +59,12 @@ export class ReportApiClient {
     return res.json() as Promise<ReportDTO>;
   }
 
-  async createReport(input: { date: string; content: string; status?: string }): Promise<ReportDTO> {
+  async createReport(input: {
+    date: string;
+    content?: string;
+    status?: string;
+    entries?: ReportEntryInput[];
+  }): Promise<ReportDTO> {
     const res = await this.request(`/reports`, { method: "POST", body: JSON.stringify(input) });
     if (res.status === 409) {
       const body = (await res.json()) as { id: string };
@@ -57,7 +74,10 @@ export class ReportApiClient {
     return res.json() as Promise<ReportDTO>;
   }
 
-  async updateReport(id: string, input: { content?: string; status?: string }): Promise<ReportDTO | null> {
+  async updateReport(
+    id: string,
+    input: { content?: string; status?: string; entries?: ReportEntryInput[] }
+  ): Promise<ReportDTO | null> {
     const res = await this.request(`/reports/${encodeURIComponent(id)}`, {
       method: "PATCH",
       body: JSON.stringify(input),

@@ -29,6 +29,8 @@ Services exposés sur l'hôte (uniquement les MCP — les API et Postgres resten
 
 Chaque MCP nécessite une authentification explicite avant tout autre tool (voir section suivante) : appeler `authenticate` avec le token du domaine concerné.
 
+Un rapport (`Report`) n'est pas qu'un texte libre : `create_report`/`update_report` acceptent une liste `entries` — des créneaux précis `{ ticketId, startTime, endTime, description? }` ("de telle heure à telle heure, sur tel ticket") — en plus d'un `content` markdown optionnel pour un résumé narratif. `update_report` remplace entièrement les `entries` existantes quand on en fournit de nouvelles (pas de fusion partielle).
+
 Au premier démarrage, chaque API applique son schéma Prisma (`prisma db push`) et génère des données fictives via Faker (seed idempotent — ignoré si des données existent déjà) :
 
 - **Ticket** : 3 projets (`WEB`, `MOBILE`, `API`), ~8 tickets chacun, quelques commentaires
