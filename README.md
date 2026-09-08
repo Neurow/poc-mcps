@@ -31,11 +31,11 @@ Chaque MCP nécessite une authentification explicite avant tout autre tool (voir
 
 Un rapport (`Report`) n'est pas qu'un texte libre : `create_report`/`update_report` acceptent une liste `entries` — une entrée par ticket, `{ ticketId, date, duration, description? }` (`date` = horodatage ISO précis du début de la tâche, `duration` en minutes) — de quoi reconstruire entièrement ce qu'une personne a fait sur une journée. `content` reste un résumé markdown optionnel en complément. `update_report` remplace entièrement les `entries` existantes quand on en fournit de nouvelles (pas de fusion partielle).
 
-Au premier démarrage, chaque API applique son schéma Prisma (`prisma db push`) et génère des données fictives (seed idempotent — ignoré si des données existent déjà) :
+Au premier démarrage, `ticket-api` et `planning-api` appliquent leur schéma Prisma (`prisma db push`) et génèrent des données fictives (seed idempotent — ignoré si des données existent déjà) :
 
 - **Ticket** : 2 projets (`NOVA`, une app desktop & mobile de suivi de budget ; `API`, la plateforme API interne), une dizaine de tickets réalistes en français, quelques commentaires
-- **Planning** : événements sur les 10 derniers jours pour les 2 mêmes projets (la veille est garantie non-vide, pour la démo du Skill)
-- **Report** : quelques rapports sur les jours 5 à 9 (les 4 derniers jours restent libres pour la démo)
+- **Planning** : événements sur les 10 derniers jours pour les 2 mêmes projets (la veille est garantie non-vide, pour la démo du Skill). **Seed partagé avec Ticket** : au démarrage, `planning-api` s'authentifie auprès de `ticket-api` (même `PORTAL_TOKEN`) et lit les vrais tickets pour que les `ticketId` des événements générés référencent de vrais tickets — pas des identifiants aléatoires. `planning-api` attend que `ticket-api` réponde avant de seeder (retry avec backoff), et comme `ticket-api` ne démarre son serveur HTTP qu'une fois son propre seed terminé, les données lues sont toujours complètes.
+- **Report** : pas de seed — la table démarre vide, c'est au Skill (ou à toi manuellement) de créer des rapports.
 
 Claude Code est configuré via [.mcp.json](.mcp.json) pour se connecter aux trois serveurs. Le fichier ayant été créé/modifié en session, un redémarrage de session Claude Code est nécessaire pour (re)charger la configuration à chaque ajout de serveur.
 
