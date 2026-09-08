@@ -7,10 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Un rapport par jour. `entries` porte le détail précis "de telle heure
-// à telle heure, sur tel ticket" ; `content` reste un résumé libre
-// optionnel en complément (le regroupement par projet, lui, reste une
-// responsabilité du Skill, pas du schéma Report).
+// Un rapport par jour. `entries` porte le détail précis "un ticket = une
+// entrée" : à quelle heure la tâche a commencé (`date`, timestamp
+// complet) et combien de temps elle a duré (`duration`, en minutes) —
+// de quoi reconstruire entièrement ce qu'une personne a fait sur une
+// journée. `content` reste un résumé libre optionnel en complément (le
+// regroupement par projet, lui, reste une responsabilité du Skill, pas
+// du schéma Report).
 model Report {
   id        String        @id @default(cuid())
   date      DateTime      @unique @db.Date
@@ -27,9 +30,9 @@ model ReportEntry {
   id          String   @id @default(cuid())
   reportId    String
   report      Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  ticketId    String // référence faible vers un ticket, pas de FK inter-système
-  startTime   String // "09:00"
-  endTime     String // "10:30"
+  ticketId    String // référence faible vers un ticket, pas de FK inter-système — un ticket = une entrée
+  date        DateTime // début précis de la tâche (timestamp complet, pas juste le jour)
+  duration    Int // durée en minutes
   description String?
   createdAt   DateTime @default(now())
 

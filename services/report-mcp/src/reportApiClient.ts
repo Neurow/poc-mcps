@@ -2,8 +2,8 @@ import type { TokenManager } from "./auth/tokenManager.js";
 
 export interface ReportEntryInput {
   ticketId: string;
-  startTime: string;
-  endTime: string;
+  date: string;
+  duration: number;
   description?: string;
 }
 

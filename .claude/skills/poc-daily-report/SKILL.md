@@ -61,12 +61,22 @@ clos.
 
 ### 5. Construire les créneaux précis (`entries`)
 
-Le rapport porte le détail précis "de telle heure à telle heure, sur tel ticket" via `entries`, pas
-seulement une synthèse en texte libre. Pour **chaque événement de planning qui a un `ticketId`**, crée
-une entrée :
+Le rapport porte le détail précis "un ticket = une entrée" via `entries`, avec l'heure de début exacte
+et la durée — pas seulement une synthèse en texte libre.
+
+1. Ne considère que les événements de planning qui ont un `ticketId`.
+2. **Regroupe-les par `ticketId`** — une entrée par ticket, jamais deux entrées pour le même ticket
+   dans un même rapport, même s'il apparaît dans plusieurs événements ce jour-là.
+3. Pour chaque ticket, construis une entrée :
 
 ```
-{ ticketId, startTime, endTime, description: <titre de l'événement> }
+{
+  ticketId,
+  date: <horodatage ISO 8601 UTC du début du premier événement de ce ticket ce jour-là,
+         ex: "2026-09-07T09:00:00Z" — combine la date du planning et son startTime>,
+  duration: <somme en minutes de tous les événements de ce ticket ce jour-là>,
+  description: <titre du (premier) événement, ou une combinaison courte s'il y en a plusieurs>
+}
 ```
 
 Les événements **sans** `ticketId` (réunions génériques, non rattachées à un ticket précis) n'ont pas

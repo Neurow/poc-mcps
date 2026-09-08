@@ -5,18 +5,26 @@ import { prisma } from "../db.js";
 export const reportsRouter = Router();
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^\d{2}:\d{2}$/;
 const STATUSES = ["draft", "submitted"] as const;
 
 const entrySchema = z.object({
   ticketId: z.string().trim().min(1),
-  startTime: z.string().regex(TIME_RE),
-  endTime: z.string().regex(TIME_RE),
+  date: z.string().datetime().describe("Début précis de la tâche (ISO 8601 UTC)"),
+  duration: z.number().int().positive().describe("Durée en minutes"),
   description: z.string().trim().optional(),
 });
 
+function toEntryCreateData(entries: z.infer<typeof entrySchema>[]) {
+  return entries.map((e) => ({
+    ticketId: e.ticketId,
+    date: new Date(e.date),
+    duration: e.duration,
+    description: e.description,
+  }));
+}
+
 const entryInclude = {
-  entries: { orderBy: { startTime: "asc" as const } },
+  entries: { orderBy: { date: "asc" as const } },
 };
 
 function toReportDTO(report: {
@@ -26,7 +34,7 @@ function toReportDTO(report: {
   status: string;
   createdAt: Date;
   updatedAt: Date;
-  entries: { id: string; ticketId: string; startTime: string; endTime: string; description: string | null }[];
+  entries: { id: string; ticketId: string; date: Date; duration: number; description: string | null }[];
 }) {
   return {
     id: report.id,
@@ -36,8 +44,8 @@ function toReportDTO(report: {
     entries: report.entries.map((e) => ({
       id: e.id,
       ticketId: e.ticketId,
-      startTime: e.startTime,
-      endTime: e.endTime,
+      date: e.date.toISOString(),
+      duration: e.duration,
       description: e.description,
     })),
     createdAt: report.createdAt.toISOString(),
@@ -91,7 +99,7 @@ reportsRouter.post("/", async (req, res) => {
       date: dateValue,
       content,
       status: status ?? "draft",
-      entries: { create: entries ?? [] },
+      entries: { create: toEntryCreateData(entries ?? []) },
     },
     include: entryInclude,
   });
@@ -128,7 +136,7 @@ reportsRouter.patch("/:id", async (req, res) => {
     data: {
       content,
       status,
-      ...(entries && { entries: { deleteMany: {}, create: entries } }),
+      ...(entries && { entries: { deleteMany: {}, create: toEntryCreateData(entries) } }),
     },
     include: entryInclude,
   });

@@ -29,12 +29,12 @@ Services exposés sur l'hôte (uniquement les MCP — les API et Postgres resten
 
 Chaque MCP nécessite une authentification explicite avant tout autre tool (voir section suivante) : appeler `authenticate` avec le token du domaine concerné.
 
-Un rapport (`Report`) n'est pas qu'un texte libre : `create_report`/`update_report` acceptent une liste `entries` — des créneaux précis `{ ticketId, startTime, endTime, description? }` ("de telle heure à telle heure, sur tel ticket") — en plus d'un `content` markdown optionnel pour un résumé narratif. `update_report` remplace entièrement les `entries` existantes quand on en fournit de nouvelles (pas de fusion partielle).
+Un rapport (`Report`) n'est pas qu'un texte libre : `create_report`/`update_report` acceptent une liste `entries` — une entrée par ticket, `{ ticketId, date, duration, description? }` (`date` = horodatage ISO précis du début de la tâche, `duration` en minutes) — de quoi reconstruire entièrement ce qu'une personne a fait sur une journée. `content` reste un résumé markdown optionnel en complément. `update_report` remplace entièrement les `entries` existantes quand on en fournit de nouvelles (pas de fusion partielle).
 
-Au premier démarrage, chaque API applique son schéma Prisma (`prisma db push`) et génère des données fictives via Faker (seed idempotent — ignoré si des données existent déjà) :
+Au premier démarrage, chaque API applique son schéma Prisma (`prisma db push`) et génère des données fictives (seed idempotent — ignoré si des données existent déjà) :
 
-- **Ticket** : 3 projets (`WEB`, `MOBILE`, `API`), ~8 tickets chacun, quelques commentaires
-- **Planning** : événements sur les 10 derniers jours pour les 3 mêmes projets (la veille est garantie non-vide, pour la démo du Skill)
+- **Ticket** : 2 projets (`NOVA`, une app desktop & mobile de suivi de budget ; `API`, la plateforme API interne), une dizaine de tickets réalistes en français, quelques commentaires
+- **Planning** : événements sur les 10 derniers jours pour les 2 mêmes projets (la veille est garantie non-vide, pour la démo du Skill)
 - **Report** : quelques rapports sur les jours 5 à 9 (les 4 derniers jours restent libres pour la démo)
 
 Claude Code est configuré via [.mcp.json](.mcp.json) pour se connecter aux trois serveurs. Le fichier ayant été créé/modifié en session, un redémarrage de session Claude Code est nécessaire pour (re)charger la configuration à chaque ajout de serveur.

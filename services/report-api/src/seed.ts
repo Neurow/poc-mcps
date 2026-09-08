@@ -18,28 +18,34 @@ async function main() {
   // Rapports pour les jours 5 à 9 uniquement : les 4 derniers jours (dont
   // "hier") restent volontairement sans rapport pour la démo du Skill
   // daily-report, qui doit pouvoir en créer un.
-  const SLOTS = [
-    ["09:00", "10:30"],
-    ["10:30", "12:00"],
-    ["14:00", "15:30"],
+  // [heure de début, minute de début, durée en minutes]
+  const SLOTS: [number, number, number][] = [
+    [9, 0, 90],
+    [10, 30, 90],
+    [14, 0, 90],
   ];
 
   for (let offset = 5; offset < 10; offset++) {
     const entryCount = faker.number.int({ min: 1, max: 3 });
     const slots = faker.helpers.shuffle(SLOTS).slice(0, entryCount);
+    const day = dateAtDayOffset(offset);
 
     await prisma.report.create({
       data: {
-        date: dateAtDayOffset(offset),
+        date: day,
         content: `## Synthèse du jour\n\n${faker.lorem.paragraphs(2, "\n\n")}`,
         status: faker.helpers.arrayElement(["draft", "submitted"]),
         entries: {
-          create: slots.map(([startTime, endTime]) => ({
-            ticketId: faker.string.alphanumeric(20),
-            startTime,
-            endTime,
-            description: faker.hacker.phrase(),
-          })),
+          create: slots.map(([hour, minute, duration]) => {
+            const entryDate = new Date(day);
+            entryDate.setUTCHours(hour, minute, 0, 0);
+            return {
+              ticketId: faker.string.alphanumeric(20),
+              date: entryDate,
+              duration,
+              description: faker.hacker.phrase(),
+            };
+          }),
         },
       },
     });

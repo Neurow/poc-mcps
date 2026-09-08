@@ -1,9 +1,10 @@
 import { faker } from "@faker-js/faker";
 import { prisma } from "./db.js";
 
+// Doit rester aligné avec les clés de projet de Ticket API (systèmes
+// indépendants, chacun sa copie des projets connus).
 const PROJECT_DEFS = [
-  { key: "WEB", name: "Site web public" },
-  { key: "MOBILE", name: "Application mobile" },
+  { key: "NOVA", name: "Nova (suivi de budget — desktop & mobile)" },
   { key: "API", name: "Plateforme API interne" },
 ];
 
